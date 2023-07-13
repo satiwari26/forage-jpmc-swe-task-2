@@ -14,8 +14,8 @@ interface IProps {
  * Perspective library adds load to HTMLElement prototype.
  * This interface acts as a wrapper for Typescript compiler.
  */
-interface PerspectiveViewerElement {
-  load: (table: Table) => void,
+interface PerspectiveViewerElement extends HTMLElement{ //PerspectiveViewerElement is a custom type of HTMLElement
+  load: (table: Table) => void, //load is a function that takes in a table and returns void
 }
 
 /**
@@ -27,28 +27,41 @@ class Graph extends Component<IProps, {}> {
   table: Table | undefined;
 
   render() {
-    return React.createElement('perspective-viewer');
+    return React.createElement('perspective-viewer'); //create a perspective-viewer element and mount it on the DOM
   }
 
-  componentDidMount() {
-    // Get element to attach the table from the DOM.
-    const elem: PerspectiveViewerElement = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
+  componentDidMount() { //this life cycle method is called after the component is mounted on the DOM
 
-    const schema = {
+    // Get element to attach the table from the DOM.
+    const elem = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
+    //this basically looks for the first element with the tag name 'perspective-viewer' and cast it to PerspectiveViewerElement
+
+    const schema = {  //defines the schema that is going to be used in the table
       stock: 'string',
       top_ask_price: 'float',
       top_bid_price: 'float',
       timestamp: 'date',
     };
 
-    if (window.perspective && window.perspective.worker()) {
+    if (window.perspective && window.perspective.worker()) {  //we create a table object using the schema
       this.table = window.perspective.worker().table(schema);
     }
-    if (this.table) {
-      // Load the `table` in the `<perspective-viewer>` DOM reference.
-
-      // Add more Perspective configurations here.
+    if (this.table) { //when table exists
+      //we load the table object into the perspective-viewer element that we created earlier
       elem.load(this.table);
+
+      //we further define other configurations for the perspective-viewer element
+      elem.setAttribute('view','y_line'); //setting the view to y_axis
+      elem.setAttribute('column-pivots','["stock"]'); //setting the column-pivots to stock
+      elem.setAttribute('row-pivots','["timestamp"]'); //setting the row-pivots to timestamp
+      elem.setAttribute('columns','["top_ask_price"]'); //setting the columns to top_ask_price
+      //aggregates is used to define the type of calculation to be performed on the data
+      elem.setAttribute('aggregates',`{ 
+        "stock":"distinct count",
+        "top_ask_price":"avg",
+        "top_bid_price":"avg",
+        "timestamp":"distinct count"
+      }`)
     }
   }
 
